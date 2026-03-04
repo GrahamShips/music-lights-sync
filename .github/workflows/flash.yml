@@ -19,7 +19,7 @@ jobs:
         run: npm install -g particle-cli
 
       - name: Authenticate with Particle
-        run: particle login --with-token ${{ secrets.PARTICLE_AUTH_TOKEN }}
+        run: particle login --token ${{ secrets.PARTICLE_AUTH_TOKEN }}
 
       - name: Compile firmware
         run: particle compile argon . --saveTo firmware.bin
