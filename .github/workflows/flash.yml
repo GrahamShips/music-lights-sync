@@ -16,7 +16,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Particle CLI
-        run: npm install -g particle-cli
+        run: |
+          npm install -g particle-cli
+          cd /usr/local/lib/node_modules/particle-cli && npm install execa
 
       - name: Authenticate with Particle
         run: particle login --token ${{ secrets.PARTICLE_AUTH_TOKEN }}
