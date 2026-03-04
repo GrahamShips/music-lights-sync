@@ -1,0 +1,28 @@
+name: Compile and Flash
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'lib/**'
+      - 'project.properties'
+
+jobs:
+  flash:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Particle CLI
+        run: npm install -g particle-cli
+
+      - name: Authenticate with Particle
+        run: particle login --with-token ${{ secrets.PARTICLE_AUTH_TOKEN }}
+
+      - name: Compile firmware
+        run: particle compile argon . --saveTo firmware.bin
+
+      - name: Flash device OTA
+        run: particle flash ${{ secrets.PARTICLE_DEVICE_ID }} firmware.bin

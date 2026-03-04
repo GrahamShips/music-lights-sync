@@ -53,8 +53,8 @@ float lightValues[NUM_STRIPS];
 float netSignals[NUM_STRIPS];
 
 //for rainbow color modes
-uint8_t hue = 0;
-uint8_t stripHues[NUM_STRIPS] = {0, 36, 72, 108, 144, 180, 216}; // For 7 strips, evenly distributed hues
+uint16_t hue = 0;
+uint16_t stripHues[NUM_STRIPS] = {0, 144, 288, 432, 576, 720, 864}; // For 7 strips, evenly distributed hues
 
 int loopNum = 0;
 
@@ -237,14 +237,17 @@ void loop() {
     }
 
     updateStripColors();
-    hue++; // Increment hue for rainbow effect
-
     if (shapeMode == 2) {
         for (int j = 0; j < numberLEDs; j++) {
             float threshold = (100.0 * j) / numberLEDs;
             for (int i = 0; i < NUM_STRIPS; i++) {
                 if (percentFill[i] > threshold) {
-                    strips[i].setColorDimmed(j, red, green, blue, brightness);
+                    if (colorMode == 1) {
+                        strips[i].setColorDimmed(j, red, green, blue, brightness);
+                    }
+                    // Rainbow modes: color already set by updateStripColors(), leave it
+                } else {
+                    strips[i].setPixelColor(j, 0);  // Black out inactive LEDs
                 }
             }
         }
@@ -253,13 +256,19 @@ void loop() {
         for (int j = 0; j < numberLEDs; j++) {
             for (int i = 0; i < NUM_STRIPS; i++) {
                 if (abs(j - 55) < (numberLEDs * (percentFill[i] / 2.0) / 100.0)) {
-                    strips[i].setColorDimmed(j, red, green, blue, brightness);
+                    if (colorMode == 1) {
+                        strips[i].setColorDimmed(j, red, green, blue, brightness);
+                    }
+                } else {
+                    strips[i].setPixelColor(j, 0);
                 }
             }
         }
         int middleIndex = 55;
         for (int i = 0; i < NUM_STRIPS; i++) {
-            strips[i].setColorDimmed(middleIndex, red, green, blue, brightness);
+            if (colorMode == 1) {
+                strips[i].setColorDimmed(middleIndex, red, green, blue, brightness);
+            }
         }
     }
 
@@ -288,7 +297,7 @@ void updateStripColors() {
             // Increment hue for the rainbow effect and set a baseline rainbow color
             hue++;
             {
-                uint32_t rainbowColor = applyBrightness(hsvToRgb(hue, 255, 255));
+                uint32_t rainbowColor = applyBrightness(hsvToRgb((uint8_t)(hue / 4), 255, 255));
                 for (int i = 0; i < numberLEDs; i++) {
                     for (int s = 0; s < NUM_STRIPS; s++) {
                         strips[s].setPixelColor(i, rainbowColor);
@@ -302,7 +311,7 @@ void updateStripColors() {
             // Apply a per-strip rainbow
             for (int i = 0; i < numberLEDs; i++) {
                 for (int s = 0; s < NUM_STRIPS; s++) {
-                    strips[s].setPixelColor(i, applyBrightness(hsvToRgb(stripHues[s], 255, 255)));
+                    strips[s].setPixelColor(i, applyBrightness(hsvToRgb((uint8_t)(stripHues[s] / 4), 255, 255)));
                 }
             }
             for (int i = 0; i < NUM_STRIPS; i++) {
