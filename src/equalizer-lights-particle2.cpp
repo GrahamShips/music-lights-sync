@@ -37,12 +37,12 @@ void loop();
 // #define LEDData5 D6
 // #define LEDData6 D8
 // #define LEDData7 A3
-#define LEDData1 D3
-#define LEDData2 D2
-#define LEDData3 D4
-#define LEDData4 D5
-#define LEDData5 D6
-#define LEDData6 D8
+#define LEDData1 D8
+#define LEDData2 D6
+#define LEDData3 D5
+#define LEDData4 D4
+#define LEDData5 D3
+#define LEDData6 D2
 #define LEDData7 A3
 //#define testShift D5
 #define LEDType WS2812B
