@@ -13,7 +13,7 @@
 #define msgRead A0
 #define middleLED 65
 
-const int ledPins[NUM_STRIPS] = {D3, D2, D4, D5, D6, D8, A3};
+const int ledPins[NUM_STRIPS] = {D8, D6, D5, D4, D3, D2, A3};
 
 // Updated config string with new variables (indices 20 and 21)
 String config = "5,5,5,5,5,5,5,"  // Lower bounds 0-6
