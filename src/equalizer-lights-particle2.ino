@@ -55,7 +55,7 @@ float percentFill[NUM_STRIPS];
 
 // Mode 7: smoothed display values (exponential decay)
 float displayFill[NUM_STRIPS];
-const float decayFactor = 0.92;          // exponential decay per frame (tuneable)
+const float decayFactor = 0.80;          // exponential decay per frame (tuneable)
 const float minBrightPct = 0.25;         // brightness at silence = 25% of config
 const float maxBrightPct = 1.50;         // brightness at full volume = 150% of config
 const uint8_t maxAbsBrightness = 150;    // absolute pixel brightness cap (current protection)
