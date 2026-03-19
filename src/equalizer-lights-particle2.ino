@@ -53,6 +53,13 @@ float lightValues[NUM_STRIPS];
 float netSignals[NUM_STRIPS];
 float percentFill[NUM_STRIPS];
 
+// Mode 7: smoothed display values (exponential decay)
+float displayFill[NUM_STRIPS];
+const float decayFactor = 0.92;          // exponential decay per frame (tuneable)
+const float minBrightPct = 0.25;         // brightness at silence = 25% of config
+const float maxBrightPct = 1.50;         // brightness at full volume = 150% of config
+const uint8_t maxAbsBrightness = 150;    // absolute pixel brightness cap (current protection)
+
 // Fire mode heat map
 uint8_t fireHeat[NUM_STRIPS][numberLEDs];
 
@@ -214,7 +221,12 @@ void loop() {
     // Reset the minimum signal values every minSignalInterval milliseconds
     if (millis() - minSignalUpdateTime >= minSignalInterval) {
         for (int i = 0; i < NUM_STRIPS; i++) {
-            minSignal[i] = 4095.0;  // Reset to maximum ADC value
+            if (colorMode == 7) {
+                minSignal[i] *= 1.02;  // gradual upward drift
+                if (minSignal[i] > 4095.0) minSignal[i] = 4095.0;
+            } else {
+                minSignal[i] = 4095.0;  // existing hard reset
+            }
         }
         minSignalUpdateTime = millis();
     }
@@ -251,12 +263,25 @@ void loop() {
         percentFill[i] = constrain(percentFill[i], 0.0, 100.0);
     }
 
+    // Mode 7: fast attack, exponential decay for smooth bar retraction
+    if (colorMode == 7) {
+        for (int i = 0; i < NUM_STRIPS; i++) {
+            if (percentFill[i] >= displayFill[i]) {
+                displayFill[i] = percentFill[i];           // instant attack
+            } else {
+                displayFill[i] *= decayFactor;              // exponential decay
+                if (displayFill[i] < 0.5) displayFill[i] = 0;  // snap to zero near bottom
+            }
+        }
+    }
+
     updateStripColors();
     if (shapeMode == 2) {
         for (int j = 0; j < numberLEDs; j++) {
             float threshold = (100.0 * j) / numberLEDs;
             for (int i = 0; i < NUM_STRIPS; i++) {
-                if (percentFill[i] > threshold) {
+                float fill = (colorMode == 7) ? displayFill[i] : percentFill[i];
+                if (fill > threshold) {
                     if (colorMode == 1) {
                         strips[i].setColorDimmed(j, red, green, blue, brightness);
                     }
@@ -270,7 +295,8 @@ void loop() {
     } else if (shapeMode == 1) {
         for (int j = 0; j < numberLEDs; j++) {
             for (int i = 0; i < NUM_STRIPS; i++) {
-                if (abs(j - 55) < (numberLEDs * (percentFill[i] / 2.0) / 100.0) || j == 55) {
+                float fill = (colorMode == 7) ? displayFill[i] : percentFill[i];
+                if (abs(j - 55) < (numberLEDs * (fill / 2.0) / 100.0) || j == 55) {
                     if (colorMode == 1) {
                         strips[i].setColorDimmed(j, red, green, blue, brightness);
                     }
@@ -430,6 +456,19 @@ void updateStripColors() {
                 uint32_t color = applyBrightness(hsvToRgb(pixelHue, 255, 255));
                 for (int s = 0; s < NUM_STRIPS; s++) {
                     strips[s].setPixelColor(j, color);
+                }
+            }
+            break;
+
+        case 7:
+            // Audio-reactive rainbow gradient: brightness modulated by volume per band
+            hue++;
+            for (int j = 0; j < numberLEDs; j++) {
+                uint8_t pixelHue = (uint8_t)((hue / 4) + (j * 256 / numberLEDs));
+                for (int s = 0; s < NUM_STRIPS; s++) {
+                    float brightScale = minBrightPct + (maxBrightPct - minBrightPct) * (displayFill[s] / 100.0);
+                    uint8_t val = constrain((int)(brightness * brightScale), 0, maxAbsBrightness);
+                    strips[s].setPixelColor(j, hsvToRgb(pixelHue, 255, val));
                 }
             }
             break;
